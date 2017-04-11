@@ -70,8 +70,6 @@
                         <!--<argument>-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y</argument>-->
                         <argument>-Djavax.net.ssl.trustStore=${project.basedir}/src/main/resources/client.keystore</argument>
                         <argument>-Djavax.net.ssl.trustStorePassword=abcdef</argument>
-                        <argument>-Dremote.ejb.url=${remote.ejb.url}</argument>
-                        <argument>-Dkeystore.path=${project.basedir}/src/main/resources/client.keystore</argument>
                         <argument>client.Client</argument>
                         <!-- the main class -->
                     </arguments>
