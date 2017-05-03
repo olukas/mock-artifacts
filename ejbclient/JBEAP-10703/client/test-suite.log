@@ -1,0 +1,8 @@
+13:39:49,033 INFO  [org.jboss.ejb.client.naming.ejb.ejbURLContextFactory:37] EJBCLIENT000064: org.jboss.ejb.client.naming.ejb.ejbURLContextFactory is deprecated; new applications should use org.wildfly.naming.client.WildFlyInitialContextFactory instead
+13:39:49,084 INFO  [org.wildfly.naming.client.Version:61] WildFly Naming version 1.0.0.Beta14-redhat-1
+13:39:49,095 INFO  [org.wildfly.naming.client.WildFlyRootContext:537] WFNAM00049: Usage of the legacy "remote.connections" property is deprecated; please use javax.naming.Context#PROVIDER_URL instead
+13:39:49,262 INFO  [org.xnio.Xnio:95] XNIO version 3.5.0.Beta5-redhat-1
+13:39:49,280 INFO  [org.xnio.nio.NioXnio:57] XNIO NIO Implementation Version 3.5.0.Beta5-redhat-1
+13:39:49,391 INFO  [org.jboss.remoting3.EndpointImpl:101] JBoss Remoting version 5.0.0.Beta20-redhat-1
+13:39:49,445 INFO  [org.wildfly.security.Version:57] ELY00001: WildFly Elytron version 1.1.0.Beta38-redhat-1
+13:39:49,876 INFO  [org.jboss.ejb.client.EJBClient:52] JBoss EJB Client version 4.0.0.Beta25-redhat-1
