@@ -1,17 +1,14 @@
 package client;
 
-import java.security.Provider;
 import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import org.wildfly.naming.client.WildFlyInitialContextFactory;
-import org.wildfly.security.WildFlyElytronProvider;
-import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.wildfly.security.auth.client.AuthenticationContext;
-import org.wildfly.security.auth.client.MatchRule;
 
 import ejb.TransactionalBeanRemote;
 
@@ -25,20 +22,7 @@ public class Client {
     public static final String URL = "remote+http://127.0.0.1:8080";
 
     public static void main(String[] args) throws Exception {
-        /* FIXME as of DR18, you can have only one of these variants - if both variants are run, the second will always fail
-          they are not really isolated - is this a bug??? */
-        // variant 1
         runUsingSecurityCredentialsInInitialContext();
-
-        // variant 2
-//        runUsingAuthenticationContext();
-    }
-
-    public static Properties getCtxProperties() {
-        Properties props = new Properties();
-        props.put(Context.INITIAL_CONTEXT_FACTORY, WildFlyInitialContextFactory.class.getName());
-        props.put(Context.PROVIDER_URL, URL);
-        return props;
     }
 
     public static Properties getCtxPropertiesWithSecurityCredentials() {
@@ -55,27 +39,12 @@ public class Client {
         execute(new InitialContext(getCtxPropertiesWithSecurityCredentials()));
     }
 
-    public static void runUsingAuthenticationContext() throws NamingException {
-        System.out.println("******************* running using authentication context");
-        final InitialContext ctx = new InitialContext(getCtxProperties());
-        createAuthCtx().run(() -> execute(ctx));
-    }
-
-    public static AuthenticationContext createAuthCtx() {
-        AuthenticationConfiguration userConf = AuthenticationConfiguration.EMPTY
-                .useProviders(() -> new Provider[] {new WildFlyElytronProvider()})
-                .allowSaslMechanisms("DIGEST-MD5")
-                .useName(USERNAME)
-                .usePassword(PASSWORD)
-                .useRealm("ApplicationRealm");
-        return AuthenticationContext.empty().with(MatchRule.ALL, userConf);
-    }
-
     private static void execute(InitialContext ctx) {
+        UserTransaction tx = null;
         try {
             String lookupName = "ejb:/server/TransactionalBean!ejb.TransactionalBeanRemote";
             final TransactionalBeanRemote bean = (TransactionalBeanRemote)ctx.lookup(lookupName);
-            final UserTransaction tx = (UserTransaction)ctx.lookup("txn:UserTransaction");
+            tx = (UserTransaction)ctx.lookup("txn:UserTransaction");
             System.out.println("Number of committed entities: " + bean.getEntitiesCount());
             System.out.println("Beginning a transaction...");
             tx.begin();
@@ -92,8 +61,35 @@ public class Client {
             tx.commit();
             System.out.println("Number of committed entities: " + bean.getEntitiesCount());
         } catch (Exception e) {
+
+            System.out.println("Something failed!!!");
+            e.printStackTrace();
+
+            System.out.println("Rolling back....");
+            try {
+                if (tx != null && tx.getStatus() == Status.STATUS_ACTIVE) {
+                    try {
+                        tx.rollback();
+                        System.out.println("Rollback successful.");
+                    } catch (SystemException e1) {
+                        System.out.println("Rollback failed.");
+                        e1.printStackTrace();
+                    }
+                }
+            } catch (SystemException e1) {
+                e1.printStackTrace();
+            }
+
             throw new RuntimeException(e);
         } finally {
+            System.out.println("***************** Trying to call a method with @TransactionalAttribute(REQUIRED) now....");
+            final TransactionalBeanRemote bean;
+            try {
+                bean = (TransactionalBeanRemote)ctx.lookup("ejb:/server/TransactionalBean!ejb.TransactionalBeanRemote");
+                System.out.println("number of committed entities: " + bean.getEntitiesCount());
+            } catch (NamingException e) {
+                e.printStackTrace();
+            }
             try {
                 ctx.close();
             } catch (NamingException e) {
